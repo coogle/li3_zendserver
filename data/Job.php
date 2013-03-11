@@ -213,8 +213,12 @@ class Job extends \lithium\data\Model {
 	 * @param array $options Options for the queuing. Can be 'forceInline', 'successUrl' or 'failureUrl'
 	 * @throws \Exception
 	 */
-	public function queue(Document $entity, array $options = array()) {
+	public function queue($entity, array $options = array()) {
 
+		if(!$entity instanceof \lithium\data\Entity) {
+			throw new \InvalidArgumentException("Must provide an entity object");
+		}
+		
 		$defaults = array(
 			'forceInline' => false,
 			'successUrl' => null,
@@ -278,11 +282,18 @@ class Job extends \lithium\data\Model {
 		$environment = Environment::get(true);
 		$queueConfig = $environment['jobQueue'];
 
-		$queueService = new HttpService($queueConfig['httpConfig']);
+		$queueService = new $classes['HttpService']($queueConfig['httpConfig']);
 
+<<<<<<< HEAD
 		static::log("Sending Job '$id' to {$queueConfig['httpConfig']['host']}{$queueConfig['serviceEndpoint']}", \Zend_Log::DEBUG);
 		$resultText = $queueService->post($queueConfig['serviceEndpoint'],
 											array('id' => (string)$id));
+=======
+		$resultText = $queueService->post($queueConfig['insertEndpoint'],
+											array('id' => (string)$id));
+		
+		var_dump($resultText);
+>>>>>>> ca7fa2d... Fixing bugs and improving abstraction for the JQ functionality
 		switch(true) {
 			case is_string($resultText):
 				$resultObj = $this->decodeResult((string)$id, $resultText);
@@ -318,5 +329,10 @@ class Job extends \lithium\data\Model {
 		return $result;
 	}
 
+<<<<<<< HEAD
 	public function executeJob(Document $entity) {}
 }
+=======
+	public function executeJob($entity) {}
+}
+>>>>>>> ca7fa2d... Fixing bugs and improving abstraction for the JQ functionality

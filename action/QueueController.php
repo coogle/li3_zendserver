@@ -3,7 +3,9 @@ namespace li3_zendserver\action;
 
 use \li3_zendserver\data\Job;
 use \li3_zendserver\core\Queue;
+use \li3_zendserver\ZendServer;
 use \lithium\net\http\Router;
+use \lithium\core\Environment;
 use \MongoDate;
 
 class QueueController extends \lithium\action\Controller {
@@ -12,8 +14,6 @@ class QueueController extends \lithium\action\Controller {
 	
 	private $_jobResult = array();
 	private $_job = null;
-	
-	protected $_executeUrl = "http://localhost/queue/executeJob.json";
 	
 	private function isInlineJob($model = null) {
 		
@@ -65,8 +65,12 @@ class QueueController extends \lithium\action\Controller {
 			
 			if(!$this->isInlineJob($model)) {
 				$zjq = new \ZendJobQueue("tcp://localhost:10085");
-
-				$job_id = $zjq->createHttpJob($this->_executeUrl, array('id' => (string)$model->_id), $queueOptions);
+				
+				$config = ZendServer::config(Environment::get());
+				
+				$executeUrl = "http://{$config['jobQueue']['httpConfig']['host']}{$config['jobQueue']['executeEndpoint']}";
+				
+				$job_id = $zjq->createHttpJob($executeUrl, array('id' => (string)$model->_id), $queueOptions);
 			
 				if($job_id > 0) {
 					$updateData = array('$set' => array(

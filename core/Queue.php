@@ -20,12 +20,12 @@ class Queue extends \lithium\core\StaticObject {
 	
 	static public function isJobQueueOnline() {
 		
-		if(class_exists("\ZendJobQueue")) {
-			
+		if(class_exists('\ZendJobQueue')) {
 			if(@\ZendJobQueue::isJobQueueDaemonRunning()) {
 				try {
 					$zjq = new \ZendJobQueue("tcp://localhost:10085");
 				} catch(\Exception $e) {
+					var_dump($e->getMessage());
 					return false;
 				}
 				
