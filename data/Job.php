@@ -2,13 +2,6 @@
 
 namespace li3_zendserver\data;
 
-use \lithium\data\entity\Document;
-use lithium\net\http\Service as HttpService;
-use IDlib\core\Environment;
-use \Zend_Log;
-use \Zend_Debug;
-use DateTime;
-
 /**
  * The Job model for the Zend Server Job Queue
  * @author John Coggeshall
@@ -66,8 +59,15 @@ class Job extends \lithium\data\Model {
 		'failed' => array('type' => 'boolean', 'default' => false),
 		'jobData' => array('type' => 'object'),
 		'options' => array('type' => 'array')
-		);
+	);
 
+	public $_classes = array(
+		'Document' => '\lithium\data\entity\Document',
+		'HttpService' => '\lithium\net\http\Service',
+		'ZendServer' => '\li3_zendserver\ZendServer',
+		'Environment' => '\lithium\core\Environment'
+	);
+	
 	/**
 	 * Lithium metadata
 	 * @var array
@@ -77,37 +77,6 @@ class Job extends \lithium\data\Model {
 				'locked' => false
 			);
 
-	static protected $_logger = null;
-	
-	static public function setLogger(\Zend_Log $logger) {
-		static::$_logger = $logger;
-	} 
-	
-	static public function getLogger() {
-		if(static::$_logger instanceof \Zend_Log) {
-			return static::$_logger;
-		} 
-		
-		return null;
-	}
-	
-	static public function logVar($var, $priority = \Zend_Log::INFO, $extras = null) {
-		$oldSapi = Zend_Debug::getSapi();
-		Zend_Debug::setSapi('cli');
-		static::log(Zend_Debug::dump($var, null, false), $priority, $extras);
-		Zend_Debug::setSapi($oldSapi);
-	}
-	
-	static public function log($message, $priority = \Zend_Log::INFO, $extras = null) {
-		$message = "[" . get_called_class() . "] $message";
-		
-		if($logger = static::getLogger()) {
-			return $logger->log($message, $priority, $extras);
-		}
-		
-		return null;
-	}
-	
 	static public function create(array $data = array(), array $options = array()) {
 		$retval = parent::create($data, $options);
 
@@ -123,7 +92,7 @@ class Job extends \lithium\data\Model {
 	 * @return boolean
 	 */
 	static public function isJobQueueOnline() {
-		return (class_exists("\ZendJobQueue") && \ZendJobQueue::isJobQueueDaemonRunning());
+		return (class_exists('\ZendJobQueue') && \ZendJobQueue::isJobQueueDaemonRunning());
 	}
 
 	/**
@@ -279,12 +248,18 @@ class Job extends \lithium\data\Model {
 	}
 
 	protected function postJob($id) {
-		$environment = Environment::get(true);
-		$queueConfig = $environment['jobQueue'];
+		$classes = $this->_classes;
+		$config = $classes['AuthorizeNet']::config($classes['Environment']::get());
+		
+		$queueConfig = $config['jobQueue'];
 
 		$queueService = new $classes['HttpService']($queueConfig['httpConfig']);
 
+<<<<<<< HEAD
 		$resultText = $queueService->post($queueConfig['insertEndpoint'],
+=======
+		$resultText = $queueService->post($queueConfig['serviceEndpoint'],
+>>>>>>> a8f9181... Removing dependencies
 											array('id' => (string)$id));
 		
 		switch(true) {
