@@ -73,7 +73,7 @@ class Job extends \lithium\data\Model {
 	 * @var array
 	 */
 	protected $_meta = array(
-				'source' => 'jobs',
+				'source' => 'zendserver_jobs',
 				'locked' => false
 			);
 
@@ -283,7 +283,23 @@ class Job extends \lithium\data\Model {
 		static::log("Sending Job '$id' to {$queueConfig['httpConfig']['host']}{$queueConfig['serviceEndpoint']}", \Zend_Log::DEBUG);
 		$resultText = $queueService->post($queueConfig['serviceEndpoint'],
 											array('id' => (string)$id));
+<<<<<<< HEAD
 		$resultObj = $this->decodeResult((string)$id, $resultText);
+=======
+		
+		switch(true) {
+			case is_string($resultText):
+				$resultObj = $this->decodeResult((string)$id, $resultText);
+				break;
+			case is_array($resultText):
+				$resultObj = (object)$resultText;
+				break;
+			case is_object($resultText):
+				break;
+			default:
+				return false;
+		}
+>>>>>>> 71b20f6... More fixes
 
 		if(!$resultObj) {
 			return false;

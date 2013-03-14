@@ -127,6 +127,8 @@ class QueueController extends \lithium\action\Controller {
 			\ZendJobQueue::setCurrentJobStatus(\ZendJobQueue::FAILED, $this->_jobResult['message']);
 		}
 		
+		trigger_error($this->_jobResult['message'], E_USER_ERROR);
+		
 		$result = $this->_jobResult;
 		
 		unset($result['executed_time']);
@@ -156,6 +158,8 @@ class QueueController extends \lithium\action\Controller {
 	}
 	
 	public function executeJob($inline = false) {
+		
+		set_time_limit(0);
 		
 		$this->_jobResult = array('executed_time' => new MongoDate());
 		
@@ -196,7 +200,7 @@ class QueueController extends \lithium\action\Controller {
 			
 			if(is_array($jobResult)) {
 				array_walk_recursive($jobResult, function(&$item, $key) {
-					if($item instanceof \lithium\data\entity\Document) {
+					if($item instanceof \lithium\data\Entity) {
 						$item = $item->data();
 					}
 				});
