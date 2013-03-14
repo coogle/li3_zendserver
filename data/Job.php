@@ -249,7 +249,7 @@ class Job extends \lithium\data\Model {
 
 	protected function postJob($id) {
 		$classes = $this->_classes;
-		$config = $classes['AuthorizeNet']::config($classes['Environment']::get());
+		$config = $classes['ZendServer']::config($classes['Environment']::get());
 		
 		$queueConfig = $config['jobQueue'];
 
