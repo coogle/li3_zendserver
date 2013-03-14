@@ -284,16 +284,9 @@ class Job extends \lithium\data\Model {
 
 		$queueService = new $classes['HttpService']($queueConfig['httpConfig']);
 
-<<<<<<< HEAD
-		static::log("Sending Job '$id' to {$queueConfig['httpConfig']['host']}{$queueConfig['serviceEndpoint']}", \Zend_Log::DEBUG);
-		$resultText = $queueService->post($queueConfig['serviceEndpoint'],
-											array('id' => (string)$id));
-=======
 		$resultText = $queueService->post($queueConfig['insertEndpoint'],
 											array('id' => (string)$id));
 		
-		var_dump($resultText);
->>>>>>> ca7fa2d... Fixing bugs and improving abstraction for the JQ functionality
 		switch(true) {
 			case is_string($resultText):
 				$resultObj = $this->decodeResult((string)$id, $resultText);
