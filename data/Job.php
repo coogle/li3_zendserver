@@ -293,10 +293,6 @@ class Job extends \lithium\data\Model {
 		return $result;
 	}
 
-<<<<<<< HEAD
-	public function executeJob(Document $entity) {}
-}
-=======
 	public function executeJob($entity) {}
+
 }
->>>>>>> ca7fa2d... Fixing bugs and improving abstraction for the JQ functionality
