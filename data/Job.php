@@ -255,11 +255,7 @@ class Job extends \lithium\data\Model {
 
 		$queueService = new $classes['HttpService']($queueConfig['httpConfig']);
 
-<<<<<<< HEAD
 		$resultText = $queueService->post($queueConfig['insertEndpoint'],
-=======
-		$resultText = $queueService->post($queueConfig['serviceEndpoint'],
->>>>>>> a8f9181... Removing dependencies
 											array('id' => (string)$id));
 		
 		switch(true) {
