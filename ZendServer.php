@@ -53,7 +53,6 @@ class ZendServer extends \lithium\core\Adaptable
 		$default = array(
 			'debug_fastfile' => 1,
 			'debug_stop' => 1,
-			'use_ssl' => 1,
 			'no_remote' => 1,
 		);
 		
@@ -61,5 +60,32 @@ class ZendServer extends \lithium\core\Adaptable
 		
 		$options += $default;
 		return $baseUrl . "&" . http_build_query($options);
+	}
+	
+	static public function debugNow($options = array()) {
+		
+		$config = static::config(Environment::get());
+		
+		if(!isset($config['debugger']) || !isset($config['debugger']['host'])) {
+			throw new \Exception("You must provide a debugger.host value");
+		}
+		
+		$debugger_host = $config['debugger']['host'];
+		$debugger_port = isset($config['debugger']['port']) ? $config['debugger']['port'] : 10137;
+		
+		$default = array(
+			'debug_fastfile' => 1,
+			'debug_stop' => 1,
+			'no_remote' => 1,
+			'start_debug' => 1,
+			'debug_host' => $debugger_host,
+			'debug_port' => $debugger_port
+		);
+		
+		$options += $default;
+		
+		$_GET = array_merge($_GET, $options);
+		debugger_start_debug();
+		var_dump("HERE");
 	}
 }

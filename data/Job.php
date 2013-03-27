@@ -52,6 +52,7 @@ class Job extends \lithium\data\Model {
 		'jobClass' => array('type' => 'string'),
 		'jobName' => array('type' => 'string'),
 		'schedule' => array('type' => 'string', 'default' => null),
+		'schedule_time' => array('type' => 'string', 'default' => null),
 		'jobPriority' => array('type' => 'integer', 'default' => self::PRIORITY_NORMAL),
 		'accepted' => array('type' => 'date'),
 		'executed_time' => array('type' => 'date'),

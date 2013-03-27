@@ -59,6 +59,10 @@ class QueueController extends \lithium\action\Controller {
 				$queueOptions += array('schedule' => (string)$model->schedule);
 			}
 			
+			if(isset($model->schedule_time) && !empty($model->schedule_time)) {
+				$queueOptions += array('schedule_time' => (string)$model->schedule_time);
+			}
+			
 			$requestParams = $this->request->params;
 			
 			$requestParams['action'] = "executeJob";
