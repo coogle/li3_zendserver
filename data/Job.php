@@ -2,6 +2,8 @@
 
 namespace li3_zendserver\data;
 
+use \ZendJobQueue;
+
 /**
  * The Job model for the Zend Server Job Queue
  * @author John Coggeshall
@@ -14,19 +16,19 @@ class Job extends \lithium\data\Model {
 	 * @var integer
 	 */
 	const PRIORITY_LOW = 0;
-	
+
 	/**
 	 * A normal priority Job
 	 * @var integer
 	 */
 	const PRIORITY_NORMAL = 1;
-	
+
 	/**
 	 * A high priority Job
 	 * @var integer
 	 */
 	const PRIORITY_HIGH = 2;
-	
+
 	/**
 	 * An urgent priority job
 	 * @var integer
@@ -41,7 +43,7 @@ class Job extends \lithium\data\Model {
 
 	/**
 	 * The job schema
-	 * 
+	 *
 	 * @var array
 	 */
 	protected $_schema = array(
@@ -68,7 +70,7 @@ class Job extends \lithium\data\Model {
 		'ZendServer' => '\li3_zendserver\ZendServer',
 		'Environment' => '\lithium\core\Environment'
 	);
-	
+
 	/**
 	 * Lithium metadata
 	 * @var array
@@ -93,13 +95,13 @@ class Job extends \lithium\data\Model {
 	 * @return boolean
 	 */
 	static public function isJobQueueOnline() {
-		return (class_exists('\ZendJobQueue') && \ZendJobQueue::isJobQueueDaemonRunning());
+		return (class_exists('\ZendJobQueue') && ZendJobQueue::isJobQueueDaemonRunning());
 	}
 
 	/**
 	 * Load a specific job model instance based on the jobqueue ID
 	 * @param intger $job_id The ID of the job
-	 * 
+	 *
 	 * @return mixed false on error, or an instance of a specific job
 	 */
 	static public function loadJob($job_id) {
@@ -127,55 +129,108 @@ class Job extends \lithium\data\Model {
 		if(!$entity->exec_sever || empty($entity->exec_server)) {
 			return false;
 		}
-		
+
 		if(!$entity->schedule) {
 			return false;
 		}
-		
+
 		$rule = $this->getReoccurringRule($entity);
-		
-		$queue = new \ZendJobQueue("tcp://{$entity->exec_server}:10085");
+
+		$queue = new ZendJobQueue("tcp://{$entity->exec_server}:10085");
 		return $queue->deleteSchedulingRule($rule['id']);
 	}
-	
+
 	/**
 	 * Get the rule which controls the job's scheduling from the job queue
 	 * @param Document $entity
 	 */
 	public function getReoccurringRule(Document $entity) {
-		
+
 		if(!$entity->exec_server || empty($entity->exec_server)) {
 			return false;
 		}
-		
+
 		if(!$entity->schedule) {
 			return false;
 		}
-		
-		$queue = new \ZendJobQueue("tcp://{$entity->exec_server}:10085");
+
+		$queue = new ZendJobQueue("tcp://{$entity->exec_server}:10085");
 		$rules = $queue->getSchedulingRules();
-		
+
 		foreach($rules as $rule) {
 			if(isset($rule['vars']) && !empty($rule['vars'])) {
 				$vars = json_decode($rule['vars'], true);
-				
+
 				if(!$vars) {
 					break;
 				}
-				
+
 				if(!isset($vars['id'])) {
 					break;
 				}
-				
+
 				if($vars['id'] == (string)$entity->_id) {
 					return $rule;
 				}
 			}
 		}
-		
+
 		return false;
 	}
-	
+
+	/**
+	 * Remove a job in the JQ
+	 *
+	 * @param object $entity
+	 */
+	public function deleteJob($entity)
+	{
+		$jobId = $entity->job_id;
+		$zjq = new ZendJobQueue("tcp://localhost:10085");
+		$zjq->removeJob($jobId);
+		$entity->delete();
+	}
+
+	/**
+	 * Instruct the JQ to execute this job ASAP, even if it was scheduled to run in the future.
+	 *
+	 * @param object $entity
+	 */
+	public function runNow($entity)
+	{
+		$jobId = $entity->job_id;
+
+		$zjq = new ZendJobQueue("tcp://localhost:10085");
+
+		$jobStatus = $zjq->getJobStatus($jobId);
+		switch($jobStatus['status']) {
+			case ZendJobQueue::STATUS_SCHEDULED:
+			case ZendJobQueue::STATUS_SUSPENDED:
+				break;
+			default:
+			case ZendJobQueue::STATUS_PENDING:
+			case ZendJobQueue::STATUS_WAITING_PREDECESSOR:
+			case ZendJobQueue::STATUS_RUNNING:
+			case ZendJobQueue::STATUS_COMPLETED:
+			case ZendJobQueue::STATUS_OK:
+			case ZendJobQueue::STATUS_FAILED:
+			case ZendJobQueue::STATUS_LOGICALLY_FAILED:
+			case ZendJobQueue::STATUS_TIMEOUT:
+			case ZendJobQueue::STATUS_REMOVED:
+				return false;
+		}
+
+		$zjq->removeJob($jobId);
+
+		unset($entity->schedule_time);
+
+		if(!$entity->save()) {
+			throw new \Exception("Failed to update Job in Database");
+		}
+
+		$entity->queue();
+	}
+
 	/**
 	 * Queue the job into the job queue
 	 *
@@ -188,7 +243,7 @@ class Job extends \lithium\data\Model {
 		if(!$entity instanceof \lithium\data\Entity) {
 			throw new \InvalidArgumentException("Must provide an entity object");
 		}
-		
+
 		$defaults = array(
 			'forceInline' => false,
 			'successUrl' => null,
@@ -251,14 +306,14 @@ class Job extends \lithium\data\Model {
 	protected function postJob($id) {
 		$classes = $this->_classes;
 		$config = $classes['ZendServer']::config($classes['Environment']::get());
-		
+
 		$queueConfig = $config['jobQueue'];
 
 		$queueService = new $classes['HttpService']($queueConfig['httpConfig']);
 
 		$resultText = $queueService->post($queueConfig['insertEndpoint'],
 											array('id' => (string)$id));
-		
+
 		switch(true) {
 			case is_string($resultText):
 				$resultObj = $this->decodeResult((string)$id, $resultText);
